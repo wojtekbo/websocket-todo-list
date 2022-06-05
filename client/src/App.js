@@ -1,9 +1,95 @@
-function App() {
+import React, {useState, useEffect, useRef} from 'react';
+import io from 'socket.io-client';
+import uniqid from 'uniqid';
+
+const App = () => {
+  let socket = useRef(null);
+
+  const [tasks, setTasks] = useState(['test']);
+  const [taskName, setTaskName] = useState('');
+
+  useEffect(() => {
+    console.log('RERENDER');
+    socket.current = io('http://localhost:8000');
+    socket.current.on('updateData', payload => updateTasks(payload));
+    socket.current.on('addTask', task => addTask(task));
+    socket.current.on('removeTask', index => removeTask(index));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const submitForm = e => {
+    e.preventDefault();
+    addTask(taskName);
+    socket.current.emit('addTask', taskName);
+    setTaskName('');
+  };
+
+  const updateTasks = payload => {
+    console.log('updateTasks');
+    console.log(payload);
+    console.log(tasks);
+    setTasks(payload);
+    console.log(payload);
+    console.log(tasks);
+  };
+
+  const addTask = task => {
+    console.log('wywoalnie dodania: ' + task);
+    console.log(tasks);
+    const newTasksList = [...tasks, task];
+    console.log(newTasksList);
+    setTasks(newTasksList);
+  };
+
+  const removeTask = index => {
+    console.log('wywoalnie usuniecia');
+    const newTasksList = [...tasks];
+    newTasksList.splice(index, 1);
+    setTasks(newTasksList);
+    socket.current.emit('removeTask', index);
+  };
+
   return (
     <div className="App">
-      <h1>test</h1>
+      <header>
+        <h1>ToDoList.app</h1>
+      </header>
+
+      <section className="tasks-section" id="tasks-section">
+        <h2>Tasks</h2>
+
+        <ul className="tasks-section__list" id="tasks-list">
+          {tasks.map((task, index) => {
+            return (
+              <li className="task" key={index}>
+                {task}
+                <button className="btn btn--red" onClick={() => removeTask(index)}>
+                  Remove
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+
+        <form id="add-task-form" onSubmit={e => submitForm(e, taskName)}>
+          <input
+            className="text-input"
+            autoComplete="off"
+            type="text"
+            placeholder="Type your description"
+            id="task-name"
+            value={taskName}
+            onChange={e => {
+              setTaskName(e.target.value);
+            }}
+          />
+          <button className="btn" type="submit">
+            Add
+          </button>
+        </form>
+      </section>
     </div>
   );
-}
+};
 
 export default App;
