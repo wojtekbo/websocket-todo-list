@@ -1,21 +1,28 @@
 import React, {useState, useEffect, useRef} from 'react';
 import io from 'socket.io-client';
-import uniqid from 'uniqid';
+// import uniqid from 'uniqid';
 
 const App = () => {
   let socket = useRef(null);
-
-  const [tasks, setTasks] = useState(['test']);
-  const [taskName, setTaskName] = useState('');
 
   useEffect(() => {
     console.log('RERENDER');
     socket.current = io('http://localhost:8000');
     socket.current.on('updateData', payload => updateTasks(payload));
     socket.current.on('addTask', task => addTask(task));
-    socket.current.on('removeTask', index => removeTask(index));
+    socket.current.on('removeTask', index => removeTask(index, 'server'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const [tasks, setTasks] = useState([]);
+  const [taskName, setTaskName] = useState('');
+
+  const updateTasks = payload => {
+    console.log('updateTasks');
+    setTasks(payload);
+    console.log(payload);
+    console.log(tasks);
+  };
 
   const submitForm = e => {
     e.preventDefault();
@@ -24,29 +31,22 @@ const App = () => {
     setTaskName('');
   };
 
-  const updateTasks = payload => {
-    console.log('updateTasks');
-    console.log(payload);
-    console.log(tasks);
-    setTasks(payload);
-    console.log(payload);
-    console.log(tasks);
-  };
-
   const addTask = task => {
     console.log('wywoalnie dodania: ' + task);
-    console.log(tasks);
     const newTasksList = [...tasks, task];
     console.log(newTasksList);
     setTasks(newTasksList);
   };
 
-  const removeTask = index => {
+  const removeTask = (index, source) => {
     console.log('wywoalnie usuniecia');
     const newTasksList = [...tasks];
     newTasksList.splice(index, 1);
     setTasks(newTasksList);
-    socket.current.emit('removeTask', index);
+    console.log(source);
+    if (source === 'client') {
+      socket.current.emit('removeTask', index);
+    }
   };
 
   return (
@@ -63,7 +63,7 @@ const App = () => {
             return (
               <li className="task" key={index}>
                 {task}
-                <button className="btn btn--red" onClick={() => removeTask(index)}>
+                <button className="btn btn--red" onClick={e => removeTask(index, 'client')}>
                   Remove
                 </button>
               </li>

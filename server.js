@@ -2,7 +2,7 @@ const express = require('express');
 const socket = require('socket.io');
 const path = require('path');
 
-const tasks = ['Wojtek', 'Mariusz', 'Tomek'];
+const tasks = ['Zakupy', 'Wstawić pranie', 'Zapłacić rachunki'];
 
 const app = express();
 const cors = require('cors');
@@ -20,7 +20,6 @@ const io = socket(server);
 
 io.on('connection', socket => {
   console.log('New client! Its id – ' + socket.id);
-  console.log(tasks);
   socket.emit('updateData', tasks);
 
   socket.on('addTask', task => {
@@ -32,7 +31,7 @@ io.on('connection', socket => {
   socket.on('removeTask', index => {
     console.log(`Removed index: ${index} by: ${socket.id}`);
     tasks.splice(index, 1);
-    socket.broadcast.emit('removeTask', index);
+    socket.broadcast.emit('removeTask', index, false);
   });
 
   socket.on('disconnect', () => {
