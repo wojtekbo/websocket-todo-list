@@ -1,16 +1,15 @@
 import React, {useState, useEffect, useRef} from 'react';
 import io from 'socket.io-client';
-// import uniqid from 'uniqid';
+import uniqid from 'uniqid';
 
 const App = () => {
   let socket = useRef(null);
 
   useEffect(() => {
-    console.log('RERENDER component');
     socket.current = io('http://localhost:8000');
     socket.current.on('updateData', payload => updateTasks(payload));
     socket.current.on('addTask', task => addTask(task));
-    socket.current.on('removeTask', index => removeTask(index, 'server'));
+    socket.current.on('removeTask', task => removeTask(task, 'server'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -18,36 +17,28 @@ const App = () => {
   const [taskName, setTaskName] = useState('');
 
   const updateTasks = payload => {
-    console.log('wywolanie updateTasks');
     setTasks(payload);
   };
 
   const submitForm = e => {
     e.preventDefault();
-    addTask(taskName);
-    socket.current.emit('addTask', taskName);
+    const task = {name: taskName, id: uniqid()};
+    addTask(task);
+    socket.current.emit('addTask', task);
     setTaskName('');
   };
 
   const addTask = task => {
-    console.log('wywolanie dodania: ' + task);
     setTasks(prevState => [...prevState, task]);
   };
 
-  const removeTask = (index, source) => {
-    console.log('wywolanie usuniecia', index);
+  const removeTask = (task, source) => {
     setTasks(prevState => {
-      let newValue = [...prevState];
-      newValue.splice(index, 1);
-      return newValue;
+      return prevState.filter(taskInState => taskInState.id !== task.id);
     });
 
-    // setTasks(prevState => {
-    //   return prevState.filter((value, i) => i !== index);
-    // });
-
     if (source === 'client') {
-      socket.current.emit('removeTask', index);
+      socket.current.emit('removeTask', task);
     }
   };
 
@@ -61,11 +52,11 @@ const App = () => {
         <h2>Tasks</h2>
 
         <ul className="tasks-section__list" id="tasks-list">
-          {tasks.map((task, index) => {
+          {tasks.map(task => {
             return (
-              <li className="task" key={index}>
-                {task}
-                <button className="btn btn--red" onClick={() => removeTask(index, 'client')}>
+              <li className="task" key={task.id}>
+                {task.name}
+                <button className="btn btn--red" onClick={() => removeTask(task, 'client')}>
                   Remove
                 </button>
               </li>

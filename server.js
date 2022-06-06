@@ -2,7 +2,7 @@ const express = require('express');
 const socket = require('socket.io');
 const path = require('path');
 
-const tasks = ['Zakupy', 'Wstawić pranie', 'Zapłacić rachunki'];
+let tasks = [];
 
 const app = express();
 const cors = require('cors');
@@ -23,18 +23,18 @@ io.on('connection', socket => {
   socket.emit('updateData', tasks);
 
   socket.on('addTask', task => {
-    console.log(`Added: ${task} by: ${socket.id}`);
+    console.log(`Added task: ${task.name} with id: ${task.id} by: ${socket.id}`);
     tasks.push(task);
     socket.broadcast.emit('addTask', task);
   });
 
-  socket.on('removeTask', index => {
-    console.log(`Removed index: ${index} by: ${socket.id}`);
-    tasks.splice(index, 1);
-    socket.broadcast.emit('removeTask', index, false);
+  socket.on('removeTask', task => {
+    console.log(`Removed task: ${task.name} with id: ${task.id} by: ${socket.id}`);
+    tasks = tasks.filter(taskOnServer => taskOnServer.id !== task.id);
+    socket.broadcast.emit('removeTask', task);
   });
 
   socket.on('disconnect', () => {
-    console.log('Oh, socket ' + socket.id + ' has left');
+    console.log('Socket ' + socket.id + ' has left');
   });
 });
