@@ -6,7 +6,7 @@ const App = () => {
   let socket = useRef(null);
 
   useEffect(() => {
-    console.log('RERENDER');
+    console.log('RERENDER component');
     socket.current = io('http://localhost:8000');
     socket.current.on('updateData', payload => updateTasks(payload));
     socket.current.on('addTask', task => addTask(task));
@@ -18,10 +18,8 @@ const App = () => {
   const [taskName, setTaskName] = useState('');
 
   const updateTasks = payload => {
-    console.log('updateTasks');
+    console.log('wywolanie updateTasks');
     setTasks(payload);
-    console.log(payload);
-    console.log(tasks);
   };
 
   const submitForm = e => {
@@ -32,18 +30,22 @@ const App = () => {
   };
 
   const addTask = task => {
-    console.log('wywoalnie dodania: ' + task);
-    const newTasksList = [...tasks, task];
-    console.log(newTasksList);
-    setTasks(newTasksList);
+    console.log('wywolanie dodania: ' + task);
+    setTasks(prevState => [...prevState, task]);
   };
 
   const removeTask = (index, source) => {
-    console.log('wywoalnie usuniecia');
-    const newTasksList = [...tasks];
-    newTasksList.splice(index, 1);
-    setTasks(newTasksList);
-    console.log(source);
+    console.log('wywolanie usuniecia', index);
+    setTasks(prevState => {
+      let newValue = [...prevState];
+      newValue.splice(index, 1);
+      return newValue;
+    });
+
+    // setTasks(prevState => {
+    //   return prevState.filter((value, i) => i !== index);
+    // });
+
     if (source === 'client') {
       socket.current.emit('removeTask', index);
     }
@@ -63,7 +65,7 @@ const App = () => {
             return (
               <li className="task" key={index}>
                 {task}
-                <button className="btn btn--red" onClick={e => removeTask(index, 'client')}>
+                <button className="btn btn--red" onClick={() => removeTask(index, 'client')}>
                   Remove
                 </button>
               </li>
